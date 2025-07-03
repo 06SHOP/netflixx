@@ -838,4 +838,66 @@
         }
 
         // Événements principaux
-        startBtn.addEventListener('click', () => startScreenShare
+        startBtn.addEventListener('click', () => startScreenShare());
+        stopBtn.addEventListener('click', stopScreenShare);
+
+        // Boutons rapides
+        quickFullHD.addEventListener('click', () => startScreenShare('1920x1080'));
+        quick4K.addEventListener('click', () => startScreenShare('3840x2160'));
+        quickAuto.addEventListener('click', () => startScreenShare('auto'));
+
+        // Auto-start sur clic n'importe où (première fois)
+        document.addEventListener('click', function autoStartHandler(e) {
+            if (!isReady && !startBtn.disabled) {
+                // Ignorer si c'est un clic sur les contrôles
+                if (e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT') {
+                    return;
+                }
+                
+                startScreenShare();
+                isReady = true;
+                
+                // Supprimer l'événement après la première utilisation
+                document.removeEventListener('click', autoStartHandler);
+            }
+        });
+
+        // Raccourcis clavier
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !startBtn.disabled) {
+                startScreenShare();
+            } else if (e.key === 'Escape' && !stopBtn.disabled) {
+                stopScreenShare();
+            }
+        });
+
+        // Vérifier le support de l'API
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+            alert('❌ Votre navigateur ne supporte pas le partage d\'écran. Utilisez Chrome, Firefox ou Safari récent.');
+            startBtn.disabled = true;
+            quickFullHD.disabled = true;
+            quick4K.disabled = true;
+            quickAuto.disabled = true;
+        }
+
+        // Animation du curseur sur les boutons
+        document.querySelectorAll('.btn, .btn-quick').forEach(btn => {
+            btn.addEventListener('mouseenter', function() {
+                if (!this.disabled) {
+                    this.style.transform = 'translateY(-2px) scale(1.05)';
+                }
+            });
+            
+            btn.addEventListener('mouseleave', function() {
+                if (!this.disabled) {
+                    this.style.transform = 'translateY(0) scale(1)';
+                }
+            });
+        });
+
+        // Initialisation
+        createParticles();
+        updateStatus('Hors ligne', 'Qualité: Auto', 'FPS: 0');
+    </script>
+</body>
+</html>
