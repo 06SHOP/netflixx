@@ -1,1 +1,219 @@
+border: 1px solid rgba(255, 193, 7, 0.5);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
 
+        .warning h3 {
+            color: #ffc107;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2.5em;
+            }
+            
+            .button-group {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-animation"></div>
+    
+    <div class="container">
+        <div class="header">
+            <h1>StreamCast</h1>
+            <p>Partage d'écran haute qualité avec style</p>
+        </div>
+
+        <div class="control-panel">
+            <div class="quality-selector">
+                <label for="qualitySelect">Qualité du stream :</label>
+                <select id="qualitySelect">
+                    <option value="1920x1080">1920x1080 (Full HD)</option>
+                    <option value="2560x1440">2560x1440 (2K)</option>
+                    <option value="3840x2160">3840x2160 (4K)</option>
+                    <option value="auto">Automatique</option>
+                </select>
+            </div>
+
+            <div class="button-group">
+                <button class="btn btn-primary" id="startBtn">
+                    🎥 Démarrer le stream
+                </button>
+                <button class="btn btn-secondary" id="stopBtn" disabled>
+                    ⏹️ Arrêter le stream
+                </button>
+            </div>
+
+            <div class="warning">
+                <h3>⚠️ Note importante</h3>
+                <p>Les contenus protégés par DRM (Netflix, Amazon Prime, etc.) apparaîtront en noir dans le stream pour respecter les droits d'auteur. Ceci est une limitation de sécurité du navigateur.</p>
+            </div>
+        </div>
+
+        <div class="stream-container">
+            <div class="video-wrapper">
+                <video id="screenVideo" autoplay muted></video>
+                <div class="placeholder" id="placeholder">
+                    Cliquez sur "Démarrer le stream" pour commencer
+                </div>
+            </div>
+
+            <div class="status-info">
+                <div class="status-item">
+                    <div class="status-indicator" id="statusIndicator"></div>
+                    <span id="statusText">Hors ligne</span>
+                </div>
+                <div class="status-item">
+                    <span id="qualityText">Qualité: Non définie</span>
+                </div>
+                <div class="status-item">
+                    <span id="fpsText">FPS: 0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const video = document.getElementById('screenVideo');
+        const placeholder = document.getElementById('placeholder');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const statusText = document.getElementById('statusText');
+        const qualityText = document.getElementById('qualityText');
+        const fpsText = document.getElementById('fpsText');
+        const qualitySelect = document.getElementById('qualitySelect');
+
+        let mediaStream = null;
+        let frameCount = 0;
+        let lastTime = performance.now();
+
+        // Fonction pour calculer les FPS
+        function calculateFPS() {
+            frameCount++;
+            const currentTime = performance.now();
+            const deltaTime = currentTime - lastTime;
+            
+            if (deltaTime >= 1000) {
+                const fps = Math.round((frameCount * 1000) / deltaTime);
+                fpsText.textContent = `FPS: ${fps}`;
+                frameCount = 0;
+                lastTime = currentTime;
+            }
+        }
+
+        // Fonction pour démarrer le stream
+        async function startScreenShare() {
+            try {
+                const selectedQuality = qualitySelect.value;
+                let constraints = {
+                    video: {
+                        frameRate: { ideal: 60, max: 120 },
+                        cursor: 'always',
+                        displaySurface: 'monitor'
+                    },
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        sampleRate: 44100
+                    }
+                };
+
+                // Configuration de la qualité
+                if (selectedQuality !== 'auto') {
+                    const [width, height] = selectedQuality.split('x').map(Number);
+                    constraints.video.width = { ideal: width };
+                    constraints.video.height = { ideal: height };
+                }
+
+                mediaStream = await navigator.mediaDevices.getDisplayMedia(constraints);
+                
+                video.srcObject = mediaStream;
+                video.style.display = 'block';
+                placeholder.style.display = 'none';
+                
+                // Mise à jour du statut
+                statusIndicator.classList.add('active');
+                statusText.textContent = 'En ligne';
+                qualityText.textContent = `Qualité: ${selectedQuality}`;
+                
+                // Démarrer le calcul des FPS
+                const fpsInterval = setInterval(calculateFPS, 16); // ~60 FPS
+                
+                // Gestion des boutons
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                
+                // Écouter la fin du stream
+                mediaStream.getVideoTracks()[0].addEventListener('ended', () => {
+                    stopScreenShare();
+                    clearInterval(fpsInterval);
+                });
+                
+            } catch (error) {
+                console.error('Erreur lors du démarrage du stream:', error);
+                alert('Erreur: Impossible de démarrer le partage d\'écran. Vérifiez les permissions de votre navigateur.');
+            }
+        }
+
+        // Fonction pour arrêter le stream
+        function stopScreenShare() {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+            }
+            
+            video.srcObject = null;
+            video.style.display = 'none';
+            placeholder.style.display = 'block';
+            
+            // Mise à jour du statut
+            statusIndicator.classList.remove('active');
+            statusText.textContent = 'Hors ligne';
+            qualityText.textContent = 'Qualité: Non définie';
+            fpsText.textContent = 'FPS: 0';
+            
+            // Gestion des boutons
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            
+            frameCount = 0;
+        }
+
+        // Événements
+        startBtn.addEventListener('click', startScreenShare);
+        stopBtn.addEventListener('click', stopScreenShare);
+
+        // Vérifier le support de l'API
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+            alert('Votre navigateur ne supporte pas le partage d\'écran. Utilisez Chrome, Firefox ou Safari récent.');
+            startBtn.disabled = true;
+        }
+
+        // Animation du curseur sur les boutons
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-2px) scale(1.05)';
+            });
+            
+            btn.addEventListener('mouseleave', function() {
+                if (!this.disabled) {
+                    this.style.transform = 'translateY(0) scale(1)';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
