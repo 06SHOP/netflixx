@@ -1,18 +1,520 @@
-border: 1px solid rgba(255, 193, 7, 0.5);
-            border-radius: 10px;
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stream Instantané - Interface Premium</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Particules flottantes */
+        .floating-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.3; }
+            50% { transform: translateY(-20px) rotate(180deg); opacity: 0.8; }
+        }
+
+        .background-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #ffeaa7, #dda0dd, #ff9ff3, #54a0ff);
+            background-size: 400% 400%;
+            animation: gradientShift 20s ease infinite;
+            z-index: -1;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            25% { background-position: 100% 50%; }
+            50% { background-position: 50% 100%; }
+            75% { background-position: 0% 50%; }
+            100% { background-position: 50% 0%; }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
             padding: 20px;
-            margin: 20px 0;
+            position: relative;
+            z-index: 2;
+        }
+
+        .header {
             text-align: center;
+            margin-bottom: 40px;
+            padding: 40px 0;
+            position: relative;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 4px;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1);
+            border-radius: 2px;
+            animation: headerGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes headerGlow {
+            0% { box-shadow: 0 0 10px rgba(255, 107, 107, 0.5); }
+            100% { box-shadow: 0 0 20px rgba(78, 205, 196, 0.8); }
+        }
+
+        .header h1 {
+            font-size: 4em;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            background: linear-gradient(45deg, #fff, #f0f0f0, #e0e0e0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: titlePulse 3s ease-in-out infinite;
+            position: relative;
+        }
+
+        @keyframes titlePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .header .subtitle {
+            font-size: 1.3em;
+            opacity: 0.9;
+            margin-top: 10px;
+            font-weight: 300;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 15px 25px;
+            border-radius: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+            min-width: 120px;
+            animation: statFloat 4s ease-in-out infinite;
+        }
+
+        .stat-item:nth-child(2) { animation-delay: 0.5s; }
+        .stat-item:nth-child(3) { animation-delay: 1s; }
+
+        @keyframes statFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .stat-item i {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+            color: #4ecdc4;
+        }
+
+        .control-panel {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            border-radius: 25px;
+            padding: 40px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .control-panel::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 70%);
+            animation: panelGlow 8s linear infinite;
+        }
+
+        @keyframes panelGlow {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .auto-start-notice {
+            background: linear-gradient(135deg, #00ff88, #00cc88, #00aa77);
+            color: #000;
+            padding: 25px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+            font-weight: bold;
+            animation: noticeGlow 3s ease-in-out infinite alternate;
+            border: 2px solid #00ff88;
+            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .auto-start-notice::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            animation: shimmer 2s linear infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
+        @keyframes noticeGlow {
+            0% { box-shadow: 0 10px 30px rgba(0, 255, 136, 0.3); }
+            100% { box-shadow: 0 15px 40px rgba(0, 255, 136, 0.6); }
+        }
+
+        .auto-start-notice h2 {
+            margin-bottom: 10px;
+            font-size: 1.6em;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 25px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+
+        .btn {
+            padding: 18px 35px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            min-width: 200px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.6s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2, #5a67d8);
+            color: white;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24, #ff3838);
+            color: white;
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 15px 35px rgba(255, 107, 107, 0.6);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .quality-selector {
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        .quality-selector label {
+            display: block;
+            margin-bottom: 15px;
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #f0f0f0;
+        }
+
+        .quality-selector select {
+            padding: 12px 25px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1em;
+            cursor: pointer;
+            outline: none;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            min-width: 200px;
+        }
+
+        .quality-selector select:hover {
+            border-color: #4ecdc4;
+            box-shadow: 0 5px 15px rgba(78, 205, 196, 0.3);
+        }
+
+        .quality-selector select option {
+            background: #2c3e50;
+            color: white;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .btn-quick {
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #ffd700, #ff8c00, #ff6b47);
+            color: #000;
+            border: none;
+            border-radius: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.95em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-quick::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transition: all 0.4s ease;
+            transform: translate(-50%, -50%);
+        }
+
+        .btn-quick:hover::before {
+            width: 200%;
+            height: 200%;
+        }
+
+        .btn-quick:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 12px 30px rgba(255, 215, 0, 0.6);
+        }
+
+        .btn-quick:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .stream-container {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 25px;
+            padding: 30px;
+            margin-top: 40px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .stream-container::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            background: linear-gradient(45deg, #667eea, #764ba2, #4ecdc4, #45b7d1, #667eea);
+            border-radius: 25px;
+            z-index: -1;
+            animation: borderFlow 4s linear infinite;
+        }
+
+        @keyframes borderFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            height: 65vh;
+            background: linear-gradient(45deg, #1a1a1a, #2d2d2d);
+            border-radius: 20px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.5);
+        }
+
+        #screenVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 20px;
+        }
+
+        .placeholder {
+            font-size: 1.8em;
+            color: rgba(255, 255, 255, 0.6);
+            text-align: center;
+            animation: placeholderPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes placeholderPulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        .status-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+        }
+
+        .status-indicator {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #ff6b6b;
+            animation: statusPulse 2s infinite;
+            box-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+        }
+
+        .status-indicator.active {
+            background: #4ecdc4;
+            box-shadow: 0 0 10px rgba(78, 205, 196, 0.5);
+        }
+
+        @keyframes statusPulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .stream-ready {
+            background: linear-gradient(135deg, #00ff88, #00cc88, #00aa77) !important;
+            color: #000 !important;
+            animation: readyPulse 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes readyPulse {
+            0% { box-shadow: 0 8px 25px rgba(0, 255, 136, 0.4); }
+            100% { box-shadow: 0 15px 40px rgba(0, 255, 136, 0.8); }
+        }
+
+        .warning {
+            background: linear-gradient(135deg, rgba(255, 193, 7, 0.2), rgba(255, 152, 0, 0.2));
+            border: 2px solid rgba(255, 193, 7, 0.5);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 25px 0;
+            text-align: center;
+            backdrop-filter: blur(10px);
         }
 
         .warning h3 {
             color: #ffc107;
             margin-bottom: 10px;
+            font-size: 1.3em;
         }
 
+        /* Responsive Design */
         @media (max-width: 768px) {
             .header h1 {
-                font-size: 2.5em;
+                font-size: 2.8em;
+            }
+            
+            .container {
+                padding: 15px;
             }
             
             .button-group {
@@ -24,81 +526,205 @@ border: 1px solid rgba(255, 193, 7, 0.5);
                 width: 100%;
                 max-width: 300px;
             }
+            
+            .quick-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn-quick {
+                width: 100%;
+                max-width: 250px;
+            }
+            
+            .stats-bar {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .status-info {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+
+        /* Effets spéciaux pour les interactions */
+        .btn:active {
+            transform: translateY(0) scale(0.95);
+        }
+
+        .control-panel:hover {
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Animation d'entrée */
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .control-panel {
+            animation: slideInUp 0.6s ease-out;
+        }
+
+        .stream-container {
+            animation: slideInUp 0.8s ease-out;
         }
     </style>
 </head>
 <body>
+    <div class="floating-particles" id="particles"></div>
     <div class="background-animation"></div>
     
     <div class="container">
         <div class="header">
-            <h1>StreamCast</h1>
-            <p>Partage d'écran haute qualité avec style</p>
+            <h1><i class="fas fa-broadcast-tower"></i> Stream Instantané</h1>
+            <p class="subtitle">Interface Premium - Partage d'écran professionnel</p>
+            
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <i class="fas fa-eye"></i>
+                    <div>
+                        <div>Statut</div>
+                        <div id="statusText">Hors ligne</div>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-cog"></i>
+                    <div>
+                        <div id="qualityText">Qualité: Auto</div>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <div>
+                        <div id="fpsText">FPS: 0</div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="control-panel">
-            <div class="quality-selector">
-                <label for="qualitySelect">Qualité du stream :</label>
-                <select id="qualitySelect">
-                    <option value="1920x1080">1920x1080 (Full HD)</option>
-                    <option value="2560x1440">2560x1440 (2K)</option>
-                    <option value="3840x2160">3840x2160 (4K)</option>
-                    <option value="auto">Automatique</option>
-                </select>
+            <div class="auto-start-notice">
+                <h2><i class="fas fa-magic"></i> Mode Auto-Start Activé</h2>
+                <p>Cliquez n'importe où sur l'interface pour démarrer automatiquement le stream !</p>
             </div>
 
             <div class="button-group">
-                <button class="btn btn-primary" id="startBtn">
-                    🎥 Démarrer le stream
+                <button id="startBtn" class="btn btn-primary">
+                    <i class="fas fa-play"></i> STREAM INSTANTANÉ
                 </button>
-                <button class="btn btn-secondary" id="stopBtn" disabled>
-                    ⏹️ Arrêter le stream
+                <button id="stopBtn" class="btn btn-secondary" disabled>
+                    <i class="fas fa-stop"></i> ARRÊTER STREAM
                 </button>
             </div>
 
-            <div class="warning">
-                <h3>⚠️ Note importante</h3>
-                <p>Les contenus protégés par DRM (Netflix, Amazon Prime, etc.) apparaîtront en noir dans le stream pour respecter les droits d'auteur. Ceci est une limitation de sécurité du navigateur.</p>
+            <div class="quality-selector">
+                <label for="qualitySelect">
+                    <i class="fas fa-sliders-h"></i> Sélectionner la qualité
+                </label>
+                <select id="qualitySelect">
+                    <option value="auto">🔄 Automatique</option>
+                    <option value="1280x720">📺 HD (720p)</option>
+                    <option value="1920x1080">🎬 Full HD (1080p)</option>
+                    <option value="2560x1440">🖥️ 2K (1440p)</option>
+                    <option value="3840x2160">🎯 4K (2160p)</option>
+                </select>
+            </div>
+
+            <div class="quick-actions">
+                <button id="quickFullHD" class="btn-quick">
+                    <i class="fas fa-rocket"></i> Quick Full HD
+                </button>
+                <button id="quick4K" class="btn-quick">
+                    <i class="fas fa-gem"></i> Quick 4K
+                </button>
+                <button id="quickAuto" class="btn-quick">
+                    <i class="fas fa-wand-magic-sparkles"></i> Quick Auto
+                </button>
             </div>
         </div>
 
         <div class="stream-container">
             <div class="video-wrapper">
-                <video id="screenVideo" autoplay muted></video>
-                <div class="placeholder" id="placeholder">
-                    Cliquez sur "Démarrer le stream" pour commencer
+                <video id="screenVideo" style="display: none;"></video>
+                <div id="placeholder" class="placeholder">
+                    <i class="fas fa-desktop" style="font-size: 3em; margin-bottom: 20px; display: block;"></i>
+                    🎥 Prêt pour le streaming
                 </div>
             </div>
-
+            
             <div class="status-info">
                 <div class="status-item">
                     <div class="status-indicator" id="statusIndicator"></div>
-                    <span id="statusText">Hors ligne</span>
+                    <span>Statut: <span id="statusText2">Hors ligne</span></span>
                 </div>
                 <div class="status-item">
-                    <span id="qualityText">Qualité: Non définie</span>
+                    <i class="fas fa-signal"></i>
+                    <span id="qualityText2">Qualité: Non définie</span>
                 </div>
                 <div class="status-item">
-                    <span id="fpsText">FPS: 0</span>
+                    <i class="fas fa-clock"></i>
+                    <span id="fpsText2">FPS: 0</span>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
+        // Création des particules flottantes
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.width = Math.random() * 4 + 2 + 'px';
+                particle.style.height = particle.style.width;
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particle.style.animationDuration = (Math.random() * 4 + 4) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Initialisation des éléments
         const startBtn = document.getElementById('startBtn');
         const stopBtn = document.getElementById('stopBtn');
         const video = document.getElementById('screenVideo');
         const placeholder = document.getElementById('placeholder');
         const statusIndicator = document.getElementById('statusIndicator');
         const statusText = document.getElementById('statusText');
+        const statusText2 = document.getElementById('statusText2');
         const qualityText = document.getElementById('qualityText');
+        const qualityText2 = document.getElementById('qualityText2');
         const fpsText = document.getElementById('fpsText');
+        const fpsText2 = document.getElementById('fpsText2');
         const qualitySelect = document.getElementById('qualitySelect');
+        const quickFullHD = document.getElementById('quickFullHD');
+        const quick4K = document.getElementById('quick4K');
+        const quickAuto = document.getElementById('quickAuto');
 
         let mediaStream = null;
         let frameCount = 0;
         let lastTime = performance.now();
+        let isReady = false;
+
+        // Variables pour la synchronisation des statuts
+        function updateStatus(status, quality, fps) {
+            statusText.textContent = status;
+            statusText2.textContent = status;
+            qualityText.textContent = quality;
+            qualityText2.textContent = quality;
+            fpsText.textContent = fps;
+            fpsText2.textContent = fps;
+        }
 
         // Fonction pour calculer les FPS
         function calculateFPS() {
@@ -108,16 +734,21 @@ border: 1px solid rgba(255, 193, 7, 0.5);
             
             if (deltaTime >= 1000) {
                 const fps = Math.round((frameCount * 1000) / deltaTime);
-                fpsText.textContent = `FPS: ${fps}`;
+                updateStatus(statusText.textContent, qualityText.textContent, `FPS: ${fps}`);
                 frameCount = 0;
                 lastTime = currentTime;
             }
         }
 
-        // Fonction pour démarrer le stream
-        async function startScreenShare() {
+        // Fonction pour démarrer le stream (optimisée)
+        async function startScreenShare(quality = null) {
             try {
-                const selectedQuality = qualitySelect.value;
+                const selectedQuality = quality || qualitySelect.value;
+                
+                if (quality) {
+                    qualitySelect.value = quality;
+                }
+                
                 let constraints = {
                     video: {
                         frameRate: { ideal: 60, max: 120 },
@@ -131,7 +762,6 @@ border: 1px solid rgba(255, 193, 7, 0.5);
                     }
                 };
 
-                // Configuration de la qualité
                 if (selectedQuality !== 'auto') {
                     const [width, height] = selectedQuality.split('x').map(Number);
                     constraints.video.width = { ideal: width };
@@ -146,15 +776,21 @@ border: 1px solid rgba(255, 193, 7, 0.5);
                 
                 // Mise à jour du statut
                 statusIndicator.classList.add('active');
-                statusText.textContent = 'En ligne';
-                qualityText.textContent = `Qualité: ${selectedQuality}`;
+                updateStatus('En ligne', `Qualité: ${selectedQuality}`, 'FPS: 0');
+                
+                // Effet visuel de succès
+                startBtn.classList.add('stream-ready');
+                startBtn.innerHTML = '<i class="fas fa-check-circle"></i> STREAM ACTIF';
                 
                 // Démarrer le calcul des FPS
-                const fpsInterval = setInterval(calculateFPS, 16); // ~60 FPS
+                const fpsInterval = setInterval(calculateFPS, 16);
                 
                 // Gestion des boutons
                 startBtn.disabled = true;
                 stopBtn.disabled = false;
+                quickFullHD.disabled = true;
+                quick4K.disabled = true;
+                quickAuto.disabled = true;
                 
                 // Écouter la fin du stream
                 mediaStream.getVideoTracks()[0].addEventListener('ended', () => {
@@ -164,7 +800,14 @@ border: 1px solid rgba(255, 193, 7, 0.5);
                 
             } catch (error) {
                 console.error('Erreur lors du démarrage du stream:', error);
-                alert('Erreur: Impossible de démarrer le partage d\'écran. Vérifiez les permissions de votre navigateur.');
+                
+                if (error.name === 'NotAllowedError') {
+                    alert('🚫 Permission refusée. Cliquez sur "Autoriser" dans la popup pour continuer.');
+                } else if (error.name === 'NotFoundError') {
+                    alert('🖥️ Aucun écran sélectionné. Veuillez choisir un écran à partager.');
+                } else {
+                    alert('❌ Erreur: ' + error.message);
+                }
             }
         }
 
@@ -179,41 +822,20 @@ border: 1px solid rgba(255, 193, 7, 0.5);
             video.style.display = 'none';
             placeholder.style.display = 'block';
             
-            // Mise à jour du statut
             statusIndicator.classList.remove('active');
-            statusText.textContent = 'Hors ligne';
-            qualityText.textContent = 'Qualité: Non définie';
-            fpsText.textContent = 'FPS: 0';
+            updateStatus('Hors ligne', 'Qualité: Non définie', 'FPS: 0');
             
-            // Gestion des boutons
+            startBtn.classList.remove('stream-ready');
+            startBtn.innerHTML = '<i class="fas fa-play"></i> STREAM INSTANTANÉ';
+            
             startBtn.disabled = false;
             stopBtn.disabled = true;
+            quickFullHD.disabled = false;
+            quick4K.disabled = false;
+            quickAuto.disabled = false;
             
             frameCount = 0;
         }
 
-        // Événements
-        startBtn.addEventListener('click', startScreenShare);
-        stopBtn.addEventListener('click', stopScreenShare);
-
-        // Vérifier le support de l'API
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-            alert('Votre navigateur ne supporte pas le partage d\'écran. Utilisez Chrome, Firefox ou Safari récent.');
-            startBtn.disabled = true;
-        }
-
-        // Animation du curseur sur les boutons
-        document.querySelectorAll('.btn').forEach(btn => {
-            btn.addEventListener('mouseenter', function() {
-                this.style.transform = 'translateY(-2px) scale(1.05)';
-            });
-            
-            btn.addEventListener('mouseleave', function() {
-                if (!this.disabled) {
-                    this.style.transform = 'translateY(0) scale(1)';
-                }
-            });
-        });
-    </script>
-</body>
-</html>
+        // Événements principaux
+        startBtn.addEventListener('click', () => startScreenShare
