@@ -743,36 +743,46 @@
         // Fonction pour démarrer le stream (optimisée)
         async function startScreenShare(quality = null) {
             try {
+                console.log('Démarrage du partage d\'écran...');
+                
                 const selectedQuality = quality || qualitySelect.value;
                 
                 if (quality) {
                     qualitySelect.value = quality;
                 }
                 
+                // Configuration des contraintes simplifiée pour éviter les erreurs
                 let constraints = {
                     video: {
-                        frameRate: { ideal: 60, max: 120 },
-                        cursor: 'always',
-                        displaySurface: 'monitor'
+                        frameRate: { ideal: 30, max: 60 },
+                        cursor: 'always'
                     },
-                    audio: {
-                        echoCancellation: true,
-                        noiseSuppression: true,
-                        sampleRate: 44100
-                    }
+                    audio: false // Désactiver l'audio pour éviter les problèmes
                 };
 
+                // Ajouter les contraintes de résolution si spécifiées
                 if (selectedQuality !== 'auto') {
                     const [width, height] = selectedQuality.split('x').map(Number);
                     constraints.video.width = { ideal: width };
                     constraints.video.height = { ideal: height };
                 }
 
+                console.log('Contraintes:', constraints);
+
+                // Demander la permission de partage d'écran
                 mediaStream = await navigator.mediaDevices.getDisplayMedia(constraints);
                 
+                console.log('Stream obtenu:', mediaStream);
+                
+                // Configurer la vidéo
                 video.srcObject = mediaStream;
                 video.style.display = 'block';
                 placeholder.style.display = 'none';
+                
+                // Attendre que la vidéo soit prête
+                video.onloadedmetadata = () => {
+                    video.play().catch(e => console.error('Erreur play:', e));
+                };
                 
                 // Mise à jour du statut
                 statusIndicator.classList.add('active');
@@ -794,20 +804,31 @@
                 
                 // Écouter la fin du stream
                 mediaStream.getVideoTracks()[0].addEventListener('ended', () => {
+                    console.log('Stream terminé par l\'utilisateur');
                     stopScreenShare();
                     clearInterval(fpsInterval);
                 });
                 
+                console.log('Partage d\'écran démarré avec succès');
+                
             } catch (error) {
                 console.error('Erreur lors du démarrage du stream:', error);
                 
+                let errorMessage = '';
                 if (error.name === 'NotAllowedError') {
-                    alert('🚫 Permission refusée. Cliquez sur "Autoriser" dans la popup pour continuer.');
+                    errorMessage = '🚫 Permission refusée. Cliquez sur "Autoriser" dans la popup pour continuer.';
                 } else if (error.name === 'NotFoundError') {
-                    alert('🖥️ Aucun écran sélectionné. Veuillez choisir un écran à partager.');
+                    errorMessage = '🖥️ Aucun écran sélectionné. Veuillez choisir un écran à partager.';
+                } else if (error.name === 'NotSupportedError') {
+                    errorMessage = '❌ Votre navigateur ne supporte pas cette fonctionnalité.';
                 } else {
-                    alert('❌ Erreur: ' + error.message);
+                    errorMessage = '❌ Erreur: ' + error.message;
                 }
+                
+                alert(errorMessage);
+                
+                // Réinitialiser l'interface en cas d'erreur
+                stopScreenShare();
             }
         }
 
@@ -871,13 +892,33 @@
             }
         });
 
-        // Vérifier le support de l'API
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-            alert('❌ Votre navigateur ne supporte pas le partage d\'écran. Utilisez Chrome, Firefox ou Safari récent.');
-            startBtn.disabled = true;
-            quickFullHD.disabled = true;
-            quick4K.disabled = true;
-            quickAuto.disabled = true;
+        // Vérifier le support de l'API dès le chargement
+        function checkBrowserSupport() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+                console.error('API de partage d\'écran non supportée');
+                alert('❌ Votre navigateur ne supporte pas le partage d\'écran.\n\nNavigateurs supportés:\n• Chrome 72+\n• Firefox 66+\n• Safari 13+\n• Edge 79+');
+                startBtn.disabled = true;
+                quickFullHD.disabled = true;
+                quick4K.disabled = true;
+                quickAuto.disabled = true;
+                return false;
+            }
+            console.log('API de partage d\'écran supportée');
+            return true;
+        }
+
+        // Test de débogage
+        function debugTest() {
+            console.log('=== TEST DE DÉBOGAGE ===');
+            console.log('Navigateur:', navigator.userAgent);
+            console.log('Support getDisplayMedia:', !!navigator.mediaDevices?.getDisplayMedia);
+            console.log('Support getUserMedia:', !!navigator.mediaDevices?.getUserMedia);
+            console.log('Éléments DOM trouvés:');
+            console.log('- startBtn:', !!startBtn);
+            console.log('- stopBtn:', !!stopBtn);
+            console.log('- video:', !!video);
+            console.log('- placeholder:', !!placeholder);
+            console.log('========================');
         }
 
         // Animation du curseur sur les boutons
@@ -896,8 +937,24 @@
         });
 
         // Initialisation
-        createParticles();
-        updateStatus('Hors ligne', 'Qualité: Auto', 'FPS: 0');
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM chargé, initialisation...');
+            createParticles();
+            updateStatus('Hors ligne', 'Qualité: Auto', 'FPS: 0');
+            checkBrowserSupport();
+            debugTest();
+        });
+
+        // Si le DOM est déjà chargé
+        if (document.readyState === 'loading') {
+            // Attendre que le DOM soit chargé
+        } else {
+            // Le DOM est déjà chargé
+            createParticles();
+            updateStatus('Hors ligne', 'Qualité: Auto', 'FPS: 0');
+            checkBrowserSupport();
+            debugTest();
+        }
     </script>
 </body>
 </html>
